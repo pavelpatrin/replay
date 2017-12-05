@@ -26,7 +26,7 @@ def main(target, log):
             logger.warning(message, record)
             continue
 
-        message = 'Got next metric for %s: %s'
+        message = 'Got metric for %s: %s'
         logger.info(message, record, metric)
 
         for x in metrics:
@@ -34,5 +34,5 @@ def main(target, log):
             measured[x] += getattr(metric, x)
 
     for x in metrics:
-        message = 'Result metric %s: %d -> %d'
+        message = 'Result metric %s: %d %d'
         logger.info(message, x, recorded[x], measured[x])

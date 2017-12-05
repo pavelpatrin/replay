@@ -1,6 +1,5 @@
 import json
 import logging
-
 import requests
 
 logger = logging.getLogger(__name__)
@@ -8,6 +7,7 @@ logger = logging.getLogger(__name__)
 
 class Record:
     __slots__ = (
+        'request',
         'method',
         'location',
         'resource',
@@ -24,7 +24,8 @@ class Record:
     )
 
     def __str__(self):
-        return '<Record %s=%d %d:%d %s %d:%d %d:%d %d:%d:%d>' % (
+        return '<Record %s %s=%d %d:%d %s %d:%d %d:%d %d:%d:%d>' % (
+            self.request,
             self.method,
             self.status,
             self.auth_id,
@@ -44,6 +45,7 @@ class Record:
         data = json.loads(line)
 
         self = cls()
+        self.request = str(data['id'])
         self.method = str(data['m'])
         self.location = str(data['uri'])
         self.resource = str(data['tr'])
