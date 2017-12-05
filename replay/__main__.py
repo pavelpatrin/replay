@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from replay.control import main
+from replay.logging import configure
 
 
 def parse_args():
@@ -33,8 +34,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-
-    format = '[%(asctime)s %(levelname)s %(name)s] %(message)s'
-    logging.basicConfig(format=format, level=args.logging)
-
+    configure(args.logging)
     main(args.target, args.log)

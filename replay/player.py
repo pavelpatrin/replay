@@ -115,32 +115,28 @@ class Player:
             yield record, self.fire(record)
 
     def fire(self, record):
-        url = self._url + record.location
+        message = 'Firing record %s'
+        logger.debug(message, record)
 
         try:
+            url = self._url + record.location
             response = requests.get(url, headers={
                 'X-Trg-Auth-User-Id': str(record.auth_id),
                 'X-Trg-User-Id': str(record.user_id),
             })
-        except Exception as e:
-            message = 'Firing failed: unhandled exception'
-            logger.debug(message, extra={
-                'record': record,
-                'exception': e,
-            })
+        except Exception as exception:
+            message = 'Firing failed: exception %r for record %s'
+            logger.debug(message, exception, record)
             return None
 
         if response.status_code != record.status:
-            message = 'Firing failed: incorrect status'
-            logger.debug(message, extra={
-                'record': record,
-                'response': response,
-            })
+            message = 'Firing failed: incorrect status %s for record %s'
+            logger.debug(message, response.status_code, record)
             return None
 
-        logger.debug('Firing ok', extra={
-            'record': record,
-            'response': response,
-        })
+        metric = Metric.from_response(response)
 
-        return Metric.from_response(response)
+        message = 'Firing ok for record %s metric %s'
+        logger.debug(message, record, metric)
+
+        return metric
