@@ -1,5 +1,5 @@
 # Replay
-## Simple access log player
+Simple access log player
 
 Usage:
 
