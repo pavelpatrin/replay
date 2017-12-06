@@ -101,8 +101,8 @@ class Metric:
 
 
 class Player:
-    def __init__(self, prefix, log):
-        self._recgen = self._records(log)
+    def __init__(self, prefix, log, filters=None):
+        self._recgen = self._records(log, filters)
         self._prefix = prefix
         self._total_records = Metric()
         self._total_metrics = Metric()
@@ -113,7 +113,13 @@ class Player:
         loop.run_until_complete(asyncio.gather(*coros))
         return self._total_records, self._total_metrics
 
-    def _records(self, log):
+    def _records(self, log, filters=None):
+        def filtered(record):
+            for attr, value in filters.items():
+                if getattr(record, attr) != value:
+                    return True
+            return False
+
         for line in log:
             try:
                 record = Record.from_log(line)
@@ -122,6 +128,8 @@ class Player:
             if record.method != 'GET':
                 continue
             if record.resource == '':
+                continue
+            if filters and filtered(record):
                 continue
             yield record
 

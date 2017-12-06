@@ -5,8 +5,8 @@ from replay.player import Player, Metric
 logger = logging.getLogger(__name__)
 
 
-def main(target, parallel, log):
-    player = Player(target, log)
+def main(target, parallel, logfile, filters):
+    player = Player(target, logfile, filters)
     records, metrics = player.start(parallel)
 
     for x in Metric.__slots__:
