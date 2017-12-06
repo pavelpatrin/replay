@@ -1,6 +1,7 @@
+import aiohttp
+import asyncio
 import json
 import logging
-import requests
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class Record:
         )
 
     @classmethod
-    def from_json(cls, line):
+    def from_log(cls, line):
         data = json.loads(line)
 
         self = cls()
@@ -100,46 +101,71 @@ class Metric:
 
 
 class Player:
-    def __init__(self, url, log):
-        self._url = url
-        self._log = log
+    def __init__(self, prefix, log):
+        self._recgen = self._records(log)
+        self._prefix = prefix
+        self._total_records = Metric()
+        self._total_metrics = Metric()
 
-    def start(self):
-        for line in self._log:
+    def start(self, count):
+        loop = asyncio.get_event_loop()
+        coros = [self._start() for _ in range(count)]
+        loop.run_until_complete(asyncio.gather(*coros))
+        return self._total_records, self._total_metrics
+
+    def _records(self, log):
+        for line in log:
             try:
-                record = Record.from_json(line)
+                record = Record.from_log(line)
             except Exception:
                 continue
             if record.method != 'GET':
                 continue
             if record.resource == '':
                 continue
+            yield record
 
-            yield record, self.fire(record)
+    def _aggregate(self, record, metric):
+        for key in Metric.__slots__:
+            value = getattr(self._total_records, key, 0)
+            current = getattr(record, key, 0)
+            setattr(self._total_records, key, value + current)
 
-    def fire(self, record):
+        for key in Metric.__slots__:
+            value = getattr(self._total_metrics, key, 0)
+            current = getattr(metric, key, 0)
+            setattr(self._total_metrics, key, value + current)
+
+    async def _start(self):
+        for record in self._recgen:
+            metric = await self._fire(record)
+            if metric:
+                self._aggregate(record, metric)
+
+    async def _fire(self, record):
         message = 'Firing record %s'
         logger.debug(message, record)
 
+        location = self._prefix + record.location
+        headers = {'X-Trg-Auth-User-Id': str(record.auth_id),
+                   'X-Trg-User-Id': str(record.user_id)}
         try:
-            url = self._url + record.location
-            response = requests.get(url, headers={
-                'X-Trg-Auth-User-Id': str(record.auth_id),
-                'X-Trg-User-Id': str(record.user_id),
-            })
+            async with aiohttp.ClientSession() as session:
+                async with session.get(location, headers=headers) as response:
+                    await response.text()
         except Exception as exception:
             message = 'Firing failed: exception %r for record %s'
             logger.debug(message, exception, record)
             return None
 
-        if response.status_code != record.status:
+        if response.status != record.status:
             message = 'Firing failed: incorrect status %s for record %s'
-            logger.debug(message, response.status_code, record)
+            logger.debug(message, response.status, record)
             return None
 
         metric = Metric.from_response(response)
 
-        message = 'Firing ok for record %s metric %s'
+        message = 'Fired record %s metric %s'
         logger.debug(message, record, metric)
 
         return metric

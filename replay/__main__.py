@@ -16,6 +16,13 @@ def parse_args():
     )
 
     parser.add_argument(
+        '--parallel',
+        dest='parallel',
+        default=1,
+        type=int,
+    )
+
+    parser.add_argument(
         '--log-file',
         dest='log',
         required=True,
@@ -35,4 +42,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     configure(args.logging)
-    main(args.target, args.log)
+    main(args.target, args.parallel, args.log)

@@ -1,38 +1,16 @@
 import logging
 
-from replay.player import Player
+from replay.player import Player, Metric
 
 logger = logging.getLogger(__name__)
 
-metrics = (
-    'sql_count',
-    'sql_time',
-    'http_count',
-    'http_time',
-    'cache_count',
-    'cache_time',
-    'cache_misses',
-)
 
+def main(target, parallel, log):
+    player = Player(target, log)
+    records, metrics = player.start(parallel)
 
-def main(target, log):
-    recorded = {x: 0 for x in metrics}
-    measured = {x: 0 for x in metrics}
-    gen = Player(target, log).start()
-
-    for index, (record, metric) in enumerate(gen):
-        if not metric:
-            message = 'Failed to get metric for %s'
-            logger.warning(message, record)
-            continue
-
-        message = 'Got metric for %s: %s'
-        logger.info(message, record, metric)
-
-        for x in metrics:
-            recorded[x] += getattr(record, x)
-            measured[x] += getattr(metric, x)
-
-    for x in metrics:
+    for x in Metric.__slots__:
         message = 'Result metric %s: %d %d'
-        logger.info(message, x, recorded[x], measured[x])
+        record = getattr(records, x, 0)
+        metric = getattr(metrics, x, 0)
+        logger.info(message, x, record, metric)

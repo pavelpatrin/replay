@@ -11,7 +11,7 @@ setup(
     url='https://github.com/pavelpatrin/replay',
     packages=['replay'],
     install_requires=[
+        'aiohttp',
         'argparse',
-        'requests',
     ],
 )
