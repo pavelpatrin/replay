@@ -1,6 +1,7 @@
 import logging
 
-from replay.player import Player, Metric
+from replay.player import Player
+from replay.structs import Metric
 
 logger = logging.getLogger(__name__)
 
