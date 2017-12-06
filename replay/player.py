@@ -110,9 +110,10 @@ class Player:
                 record = Record.from_json(line)
             except Exception:
                 continue
-            else:
-                if record.method != 'GET':
-                    continue
+            if record.method != 'GET':
+                continue
+            if record.resource == '':
+                continue
 
             yield record, self.fire(record)
 
