@@ -56,13 +56,13 @@ class Player:
 
     async def _start(self):
         for record, reference in self._source:
-            gathered = await self._fire(record)
+            gathered = await self._fire(record, reference)
             if gathered:
                 self._aggregate(reference, gathered)
 
-    async def _fire(self, record):
-        message = 'Firing record %s'
-        logger.debug(message, record)
+    async def _fire(self, record, reference):
+        message = 'Firing record %s with %s'
+        logger.debug(message, record, reference)
 
         location = self._prefix + record.location
         headers = {'X-Trg-Auth-User-Id': str(record.auth_id),
@@ -83,7 +83,7 @@ class Player:
 
         metric = Metric.from_response(response)
 
-        message = 'Fired record %s metric %s'
+        message = 'Fired record %s got %s'
         logger.debug(message, record, metric)
 
         return metric
